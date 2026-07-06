@@ -1,11 +1,17 @@
 import requests
 import os
+import sys
 import json
-from datetime import datetime
+import re
 from dotenv import load_dotenv
 
-import requests
-import json
+from google import genai
+from google.genai import types
+
+from pathlib import Path
+
+# ── 환경 변수 최상단 로드 ──────────────────────────────────
+load_dotenv()
 
 # 1. 네이버 이미지 검색 함수 (이미 만든 것 활용)
 def get_naver_image(query):
@@ -22,26 +28,59 @@ def get_naver_image(query):
     return "default_image_url"
 
 # 2. 메인 실행 함수 (AI 응답 처리 프로세스)
+
 def get_final_recommendation(user_input):
-    # [STEP 1] AI에게 맛집 추천 요청 (가정: AI가 아래와 같은 JSON 리스트를 반환함)
-    # 실제로는 openai.ChatCompletion.create() 등을 호출합니다.
-    ai_suggested_restaurants = [
-        {"name": "밀란국수", "description": "샤브샤브와 칼국수가 맛있는 가성비 맛집", "location": "개포동"},
-        {"name": "리애", "description": "두툼한 고기 맛이 일품인 프리미엄 돈카츠", "location": "개포동"},
-        {"name": "대치떡볶이", "description": "추억의 맛을 느낄 수 있는 동네 떡볶이", "location": "개포동"}
-    ]
-    
-    # [STEP 2] 각 식당별로 이미지 URL 붙이기
-    final_results = []
-    for place in ai_suggested_restaurants:
-        search_query = f"{place['location']} {place['name']}" # 예: 개포동 밀란국수 음식 메뉴
-        image_url = get_naver_image(search_query)
-        
-        # 데이터 합치기
-        place['image_url'] = image_url
-        final_results.append(place)
-    
-    return final_results
+    api_key = os.getenv("GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key)
+
+    prompt_text = f'사용자 요청: "{user_input}"\n\n맛집 5곳을 추천해주세요.'
+
+    for attempt in range(1, 3):
+        try:
+            print(f"  🤖 Gemini 호출 중... (시도 {attempt}/2)")
+            response = client.models.generate_content(
+                model="gemini-3.1-flash-lite",
+                contents=prompt_text,
+                config=types.GenerateContentConfig(
+                    system_instruction=(
+                        "당신은 맛집 추천 전문가입니다. 반드시 JSON 배열로만 응답하세요. "
+                        "형식: [{\"name\": \"식당명\", \"description\": \"한 줄 설명\", "
+                        "\"location\": \"동네명\", \"category\": \"음식 카테고리\", "
+                        "\"price_range\": \"가격대\"}]"
+                    ),
+                    response_mime_type="application/json",
+                    temperature=0.7,
+                ),
+            )
+
+            result = json.loads(response.text)
+
+            # 필수 키 검증
+            required = ["name", "description", "location", "category", "price_range"]
+            for item in result:
+                if not all(k in item for k in required):
+                    raise ValueError(f"필수 키 누락: {item}")
+
+            # 네이버 이미지 추가
+            for place in result:
+                search_query = f"{place['location']} {place['name']}"
+                place['image_url'] = get_naver_image(search_query)
+
+            print(f"  ✅ 추천 완료: {[p['name'] for p in result]}")
+            return result
+
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"  ⚠️ 파싱 실패 (시도 {attempt}/2): {e}")
+            if attempt == 1:
+                prompt_text += "\n\n주의: 순수 JSON 배열만 출력하세요. 다른 텍스트 절대 금지."
+                continue
+            else:
+                print("  ❌ 2차 실패, 빈 리스트 반환")
+                return []
+
+        except Exception as e:
+            print(f"  ❌ API 오류: {e}")
+            return []
 
 # 실행 테스트
 results = get_final_recommendation("개포동역 맛집 추천해줘")

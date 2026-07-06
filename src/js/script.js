@@ -28,7 +28,7 @@ const fetchRecommendations = async (query) => {
 // 4. 카드 렌더링 함수
 const renderCards = (data, targetElement) => {
 	if (!data || data.length === 0) {
-		targetElement.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
+		targetElement.innerHTML = '<div class="empty-msg">즐겨찾기 한 맛집이 없습니다.</div>';
 		return;
 	}
 
