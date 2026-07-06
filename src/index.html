@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>저기요 - AI 맛집 추천</title>
+		<link rel="stylesheet" href="css/style.css" />
+	</head>
+	<body>
+		<header class="gnb">
+			<div class="container">
+				<h1 class="logo" id="goHome">저기요<span>.ai</span></h1>
+				<nav>
+					<ul>
+						<li><a href="#" id="menuHome" class="active">홈</a></li>
+						<li><a href="#" id="menuFav">즐겨찾기</a></li>
+					</ul>
+				</nav>
+			</div>
+		</header>
+
+		<main class="container">
+			<!-- 홈 섹션 -->
+			<div id="homePage">
+				<section class="search-section">
+					<h2>어떤 맛집을 찾으시나요?</h2>
+					<div class="search-box">
+						<input type="text" id="searchInput" placeholder="예: 개포동역 가성비 한식" />
+						<button id="searchBtn">추천받기</button>
+					</div>
+				</section>
+				<section class="content-section">
+					<h3>✨ AI 추천 결과</h3>
+					<div id="restaurantList" class="restaurant-grid"></div>
+					<div id="emptyMessage" class="empty-message">
+						<span class="empty-icon">🍽️</span>
+						<p class="empty-copy"></p>
+					</div>
+				</section>
+			</div>
+
+			<!-- 즐겨찾기 섹션 (기본 숨김) -->
+			<div id="favPage" style="display: none">
+				<section class="content-section">
+					<h3>❤️ 나의 즐겨찾기</h3>
+					<div id="favList" class="restaurant-grid"></div>
+				</section>
+			</div>
+		</main>
+
+		<!-- 이미지 모달 -->
+		<div id="imageModal" class="modal">
+			<span class="close-modal">&times;</span>
+			<img class="modal-content" id="fullImage" />
+		</div>
+
+		<script src="js/script.js"></script>
+	</body>
+</html>
