@@ -5,6 +5,7 @@ from http.server import BaseHTTPRequestHandler
 from google import genai
 from google.genai import types
 
+
 # ── 1. 네이버 이미지 검색 함수 ──
 def get_naver_image(query):
     client_id = os.getenv("NAVER_CLIENT_ID")
@@ -38,7 +39,7 @@ def get_ai_recommendations(user_input):
     prompt_text = f'사용자 요청: "{user_input}"\n\n위 조건에 맞는 맛집을 추천해주세요.'
 
     response = client.models.generate_content(
-        model="gemini-3.1-flash", # 모델명 확인 (3.1-flash-lite가 오류날 경우를 대비해 1.5로 권장)
+        model=os.getenv("GEMINI_MODEL_NAME"), 
         contents=prompt_text,
         config=types.GenerateContentConfig(
             system_instruction=system_instruction,
