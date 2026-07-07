@@ -1,7 +1,13 @@
 {
-	"functions": {
-		"api/ai.py": {
-			"runtime": "vercel-python@0.0.1"
+	"version": 2,
+	"routes": [
+		{
+			"src": "/api/ai",
+			"dest": "/api/ai.py"
+		},
+		{
+			"src": "/(.*)",
+			"dest": "/$1"
 		}
-	}
+	]
 }
