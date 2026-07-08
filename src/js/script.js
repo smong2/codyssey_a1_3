@@ -39,6 +39,13 @@ searchBtn.addEventListener("click", () => {
 	fetchRecommendations(query);
 });
 
+// [script.js] 7. 이벤트 리스너 하단에 추가
+searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault(); // 기본 폼 제출 동작 방지
+        searchBtn.click();      // 추천받기 버튼 클릭 실행
+    }
+});
 
 // 3. API 호출 함수
 const fetchRecommendations = async (query) => {
