@@ -1,35 +1,88 @@
 // 1. 상태 관리
 let favorites = JSON.parse(localStorage.getItem("jogiyo_favs")) || [];
 
+const themeToggle = document.getElementById("themeToggle");
+const currentTheme = localStorage.getItem("jogiyo_theme");
+
 // 2. DOM 요소
 const restaurantList = document.getElementById("restaurantList");
 const favList = document.getElementById("favList");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
 
+// 접속 시 기존 테마 적용
+if (currentTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    themeToggle.textContent = "☀️";
+}
+
+themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    let theme = "light";
+    if (document.body.classList.contains("dark-mode")) {
+        theme = "dark";
+        themeToggle.textContent = "☀️";
+    } else {
+        themeToggle.textContent = "🌙";
+    }
+    localStorage.setItem("jogiyo_theme", theme);
+});
+
+searchBtn.addEventListener("click", () => {
+	const query = searchInput.value.trim();
+	if (!query) {
+        showToast("⚠️ 검색어를 입력해주세요! (예: 강남역 파스타)");
+        searchInput.focus();
+        return;
+    }
+    hideEmptyMessage();
+	fetchRecommendations(query);
+});
+
+
 // 3. API 호출 함수
 const fetchRecommendations = async (query) => {
-	// [디자인 1] 중앙 정렬된 동글동글 로딩 애니메이션
 	restaurantList.innerHTML = `
         <div class="loading-container empty-message" style="display:flex;">
             <div class="spinner">🍽️</div>
-            <p class="empty-copy">AI가 맛집을 찾고 있어요<br><span class="sub-text">잠시만 기다려주세요...</span></p>
+            <p class="empty-copy">AI가 맛집을 찾고 있어요<br><span class="sub-text">최대 15초 정도 소요될 수 있습니다...</span></p>
         </div>
     `;
+
+    // 15초 타임아웃 설정
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
 	try {
 		const response = await fetch("/api/ai", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ query }),
+            signal: controller.signal // 타임아웃 시그널 연결
 		});
+        
+        clearTimeout(timeoutId); // 성공 시 타이머 해제
+
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+
 		const data = await response.json();
 		renderCards(data, restaurantList);
+
 	} catch (error) {
 		console.error("Error:", error);
-		restaurantList.innerHTML = '<div class="empty-msg empty-message">오류가 발생했습니다. 다시 시도해주세요.</div>';
+        
+        // 에러 종류에 따른 UX 메시지 분기 처리
+        if (error.name === 'AbortError') {
+            restaurantList.innerHTML = '<div class="empty-msg empty-message">요청 시간이 초과되었습니다. 다시 시도해주세요 ⏳</div>';
+        } else {
+            restaurantList.innerHTML = '<div class="empty-msg empty-message">서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요 🚨</div>';
+        }
 	}
 };
+
+
 
 // 4. 카드 렌더링 함수
 const renderCards = (data, targetElement) => {

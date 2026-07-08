@@ -6,6 +6,21 @@ from http.server import BaseHTTPRequestHandler
 from google import genai
 from google.genai import types
 
+def send_webhook_alert(query, results_count):
+    # Vercel 환경 변수에 DISCORD_WEBHOOK_URL 을 설정해야 작동합니다.
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+    if not webhook_url:
+        return
+        
+    data = {
+        "content": f"🔍 **[저기요.ai] 새로운 검색 유입!**\n- 검색어: `{query}`\n- 반환된 맛집 수: {results_count}곳"
+    }
+    try:
+        # 응답을 기다리지 않고 빠르게 전송 (timeout 2초)
+        requests.post(webhook_url, json=data, timeout=2)
+    except Exception as e:
+        print(f"웹훅 전송 실패: {e}")
+
 # ── 1. 네이버 이미지 검색 함수 (5장으로 확대) ──
 def get_naver_image(query):
     client_id = os.getenv("NAVER_CLIENT_ID")
@@ -72,6 +87,8 @@ class handler(BaseHTTPRequestHandler):
             
             user_input = body.get('query', '맛집 추천해줘')
             results = get_ai_recommendations(user_input)
+
+            send_webhook_alert(user_input, len(results))
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
