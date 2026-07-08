@@ -52,12 +52,13 @@ def get_ai_recommendations(user_input):
     places = json.loads(response.text)
     
     for place in places:
+        # 이미지를 찾을 때는 정확도를 위해 주소+이름을 사용
         search_query = f"{place.get('address', place.get('location', ''))} {place.get('name', '')}"
-        
-        # 이미지 5장 배열 추가
         place['images'] = get_naver_image(search_query)
-        # 네이버 모바일 검색 링크 동적 생성
-        place['link'] = f"https://m.search.naver.com/search.naver?query={urllib.parse.quote(search_query)}"
+        
+        # [수정됨] 네이버 모바일 검색 링크는 '매장명'으로만 생성
+        name_only = place.get('name', '')
+        place['link'] = f"https://m.search.naver.com/search.naver?query={urllib.parse.quote(name_only)}"
         
     return places
 
