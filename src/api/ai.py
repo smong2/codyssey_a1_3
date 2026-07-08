@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import urllib.parse
+import hashlib
 from http.server import BaseHTTPRequestHandler
 from google import genai
 from google.genai import types
@@ -26,7 +27,8 @@ def get_naver_image(query):
     client_id = os.getenv("NAVER_CLIENT_ID")
     client_secret = os.getenv("NAVER_CLIENT_SECRET")
     url = "https://openapi.naver.com/v1/search/image"
-    params = {"query": query, "display": 5}  # 1장 -> 5장
+    # filter="all" 유지, 네이버 검색은 키워드 품질이 가장 중요합니다.
+    params = {"query": query, "display": 5}
     headers = {"X-Naver-Client-Id": client_id, "X-Naver-Client-Secret": client_secret}
     
     try:
@@ -45,15 +47,15 @@ def get_ai_recommendations(user_input):
     api_key = os.getenv("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
 
-    # 주소(address) 필드를 명시적으로 분리
+    # [수정] 가짜 매장 생성 방지 및 search_keyword 필드 추가
     system_instruction = (
-        "당신은 도보 이동 반경 내의 맛집 전문가입니다. "
-        "사용자가 입력한 지역(위치)과 음식 종류를 바탕으로 맛집 5곳을 추천하세요. "
+        "당신은 한국의 지역 맛집 전문가입니다. "
+        "사용자가 입력한 지역과 조건에 맞는 '실제로 존재하는' 맛집 5곳을 추천하세요. 폐업했거나 가상의 식당을 지어내면 안 됩니다. "
         "반드시 아래 JSON 배열 형식으로만 응답하세요: "
-        '[{"id": "고유식별자(예: rest-1)", "name": "식당명", "desc": "메뉴 및 특징", "address": "실제 주소 또는 상세 위치", "category": "음식 분류"}]'
+        '[{"name": "식당명", "search_keyword": "동네이름 식당명 (예: 강남역 쉑쉑버거)", "desc": "메뉴 및 특징", "address": "실제 주소 또는 상세 위치", "category": "음식 분류"}]'
     )
     
-    prompt_text = f'사용자 요청: "{user_input}"\n\n위 조건에 맞는 맛집을 추천해주세요.'
+    prompt_text = f'사용자 요청: "{user_input}"\n\n위 조건에 맞는 실존하는 맛집을 추천해주세요.'
 
     response = client.models.generate_content(
         model=os.getenv("GEMINI_MODEL_NAME"), 
@@ -67,13 +69,15 @@ def get_ai_recommendations(user_input):
     places = json.loads(response.text)
     
     for place in places:
-        # 이미지를 찾을 때는 정확도를 위해 주소+이름을 사용
-        search_query = f"{place.get('address', place.get('location', ''))} {place.get('name', '')}"
+        unique_str = f"{place.get('name')}{place.get('address')}"
+        place['id'] = hashlib.md5(unique_str.encode()).hexdigest()
+        
+        # [수정] 긴 주소 대신 AI가 만든 최적화된 검색 키워드 사용
+        search_query = place.get('search_keyword') or f"{place.get('name', '')}"
         place['images'] = get_naver_image(search_query)
         
-        # [수정됨] 네이버 모바일 검색 링크는 '매장명'으로만 생성
-        name_only = place.get('name', '')
-        place['link'] = f"https://m.search.naver.com/search.naver?query={urllib.parse.quote(name_only)}"
+        # [수정] 네이버 검색 링크도 최적화된 키워드로 전송 (타 지역 동명 이인 매장 방지)
+        place['link'] = f"https://m.search.naver.com/search.naver?query={urllib.parse.quote(search_query)}"
         
     return places
 

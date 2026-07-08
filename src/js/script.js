@@ -28,22 +28,26 @@ themeToggle.addEventListener("click", () => {
     localStorage.setItem("jogiyo_theme", theme);
 });
 
-searchBtn.addEventListener("click", () => {
-	const query = searchInput.value.trim();
-	if (!query) {
-        showToast("⚠️ 검색어를 입력해주세요! (예: 강남역 파스타)");
+const handleSearch = () => {
+    if (searchBtn.disabled) return;
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+        showToast("⚠️ 검색어를 입력해주세요!");
         searchInput.focus();
         return;
     }
     hideEmptyMessage();
-	fetchRecommendations(query);
-});
+    fetchRecommendations(query);
+};
+
+searchBtn.addEventListener("click", handleSearch);
 
 // [script.js] 7. 이벤트 리스너 하단에 추가
 searchInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
         event.preventDefault(); // 기본 폼 제출 동작 방지
-        searchBtn.click();      // 추천받기 버튼 클릭 실행
+        handleSearch();
     }
 });
 
@@ -103,14 +107,22 @@ const renderCards = (data, targetElement) => {
 			const isFav = favorites.some((f) => f.id === store.id);
             const storeJson = JSON.stringify(store).replace(/'/g, "&#39;");
             
-            // [수정 1, 2] 이미지 배열 처리 및 뱃지 표시 로직
             const imagesArray = store.images || [];
             const firstImg = imagesArray.length > 0 ? imagesArray[0] : 'https://via.placeholder.com/300?text=No+Image';
-            const extraCount = imagesArray.length - 1;
+            
+            // [수정] 기본 대체 이미지인지 판별
+            const isNoImage = firstImg.includes('via.placeholder.com');
+            
+            // 대체 이미지면 뱃지를 보여주지 않음
+            const extraCount = isNoImage ? 0 : imagesArray.length - 1;
             const badgeHtml = extraCount > 0 ? `<div class="image-count-badge">+${extraCount}</div>` : '';
             const imagesJson = JSON.stringify(imagesArray).replace(/"/g, '&quot;');
             
             const addressText = store.address || store.location || '주소 정보 없음';
+            
+            // [수정] 대체 이미지면 onclick 이벤트를 없애고 클릭 커서를 기본으로 변경
+            const clickEvent = isNoImage ? "" : `onclick="openModal(${imagesJson}, 0)"`;
+            const cursorStyle = isNoImage ? "cursor: default;" : "cursor: pointer;";
             
 			return `
             <div class="card">
@@ -118,8 +130,7 @@ const renderCards = (data, targetElement) => {
                     <svg viewBox="0 0 24 24" class="heart-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 </button>
                 
-                <!-- 카드를 클릭하면 모달이 열리면서 배열을 전달함 -->
-                <div class="image-container" onclick="openModal(${imagesJson}, 0)">
+                <div class="image-container" ${clickEvent} style="${cursorStyle}">
                     <img src="${firstImg}" class="card-img" alt="가게 이미지">
                     ${badgeHtml}
                 </div>
@@ -131,7 +142,6 @@ const renderCards = (data, targetElement) => {
                     </div>
                     <p class="desc">${store.desc}</p>
                     <div class="card-footer">
-                        <!-- [수정 5] 주소 복사 아이콘 추가 -->
                         <div class="address-wrapper">
                             <p class="address">📍 ${addressText}</p>
                             <button class="copy-btn" onclick="copyAddress('${addressText}')" title="주소 복사">
