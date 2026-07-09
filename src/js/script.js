@@ -81,6 +81,7 @@ const fetchRecommendations = async (query) => {
 
 		const data = await response.json();
 		renderCards(data, restaurantList);
+		renderFilters(data); // 필터 버튼 렌더링
 	} catch (error) {
 		console.error("Error:", error);
 
@@ -139,15 +140,19 @@ const renderCards = (data, targetElement) => {
                         <span class="category-badge">${store.category || "맛집"}</span>
                     </div>
                     <p class="desc">${store.desc}</p>
+
                     <div class="card-footer">
                         <div class="address-wrapper">
-                            <p class="address">📍 ${addressText}</p>
-                            <button class="copy-btn" onclick="copyAddress('${addressText}')" title="주소 복사">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                            </button>
+                            <p class="address" onclick="openMap('${addressText}', '${store.name}')" style="cursor:pointer; text-decoration:underline;">
+                                📍 ${addressText}
+                            </p>
+                            <button class="copy-btn" onclick="copyAddress('${addressText}')">
+                                <svg>...</svg> </button>
                         </div>
-                        <a href="${store.link}" target="_blank" class="link-btn">네이버 검색 ➔</a>
-                        <button class="share-btn" onclick='shareStore(${storeJson})'>공유하기</button>
+                        <div class="action-buttons">
+                            <a href="${store.link}" target="_blank" class="link-btn">네이버 검색 ➔</a>
+                            <button class="share-btn" onclick='shareStore(${storeJson})'>공유</button>
+                        </div>
                     </div>
                 </div>
             </div>
