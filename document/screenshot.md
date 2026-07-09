@@ -29,3 +29,10 @@
 <img src="../images/ai-interaction-02.png" />
 <img src="../images/ai-interaction-03.png" />
 <img src="../images/ai-interaction-04.png" />
+
+
+** 3. 보너스과제 - 운영 자동화 또는 데이터 저장 고도화
+
+* 검색 결과를 디스코드에 연동 (검색 결과는 리턴 매장 수로 간략하게 처리함)
+
+<img src="../images/discode.png" />

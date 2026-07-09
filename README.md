@@ -85,3 +85,7 @@ DISCORD_WEBHOOK_URL="디스코드_웹훅_주소"
 Vercel 환경 실행 url
 
 [https://codyssey-a1-3-h7m29cs3u-smong2.vercel.app](https://codyssey-a1-3-h7m29cs3u-smong2.vercel.app/#)
+
+
+## 스크린샷 증빙, 디스코드 알람(보너스과제 추가)
+[스크린샷 페이지](./document/screenshot.md)
