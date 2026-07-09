@@ -145,11 +145,9 @@ const renderCards = (data, targetElement) => {
 
                     <div class="card-footer">
                         <div class="address-wrapper">
-                            <p class="address" style="cursor:pointer; text-decoration:underline;">
+                            <p class="address" style="cursor:pointer; text-decoration:underline;text-align-last:center" onclick="copyAddress('${addressText}')">
                                 📍 ${addressText}
                             </p>
-                            <button class="copy-btn" onclick="copyAddress('${addressText}')">
-                                <svg>...</svg> </button>
                         </div>
                         <div class="action-buttons">
                             <a href="${store.link}" target="_blank" class="link-btn">네이버 검색 ➔</a>
@@ -290,23 +288,31 @@ const renderFilters = (data) => {
 };
 
 window.filterResults = (category) => {
-	// 1. 디버깅용: 어떤 카테고리가 들어오는지 확인
-	console.log("선택된 카테고리:", category);
+	// 1. 디버깅용: 필터링 시 데이터 확인
+	console.log("필터링 시작, 타겟 카테고리:", category);
+	console.log("현재 데이터 개수:", currentResults.length);
 
-	// 2. 전체 선택 시 currentResults 전체 표시
+	// 2. 전체 선택 시
 	if (category === "전체") {
 		renderCards(currentResults, restaurantList);
 		return;
 	}
 
-	// 3. 필터링 (공백 제거 후 비교)
-	const filtered = currentResults.filter((i) => {
-		const itemCat = (i.category || "맛집").trim();
-		return itemCat === category.trim();
+	// 3. 안전한 필터링 (공백 제거 및 undefined/null 방어)
+	const filtered = currentResults.filter((item) => {
+		const itemCat = (item.category || "기타").trim();
+		const targetCat = category.trim();
+		return itemCat === targetCat;
 	});
 
 	console.log("필터링 결과 개수:", filtered.length);
-	renderCards(filtered, restaurantList);
+
+	// 4. 리스트가 비어있을 때를 대비한 메시지
+	if (filtered.length === 0) {
+		restaurantList.innerHTML = `<div class="empty-msg empty-message">해당 카테고리의 맛집이 없습니다.</div>`;
+	} else {
+		renderCards(filtered, restaurantList);
+	}
 };
 
 window.shareStore = (store) => {

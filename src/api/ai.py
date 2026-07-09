@@ -47,12 +47,31 @@ def get_ai_recommendations(user_input):
     api_key = os.getenv("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
 
+    def verify_restaurant(place):
+        client_id = os.getenv("NAVER_CLIENT_ID")
+        client_secret = os.getenv("NAVER_CLIENT_SECRET")
+        headers = {
+            "X-Naver-Client-Id": client_id,
+            "X-Naver-Client-Secret": client_secret
+        }
+        url = "https://openapi.naver.com/v1/search/local.json"
+        params = {"query": f"{place.get('name')} {place.get('address')}", "display": 1}
+        try:
+            res = requests.get(url, params=params, headers=headers, timeout=3)
+            return len(res.json().get('items', [])) > 0
+        except Exception as e:
+            print(f"네이버 검색 검증 실패: {e}")
+            return False # API 통신 실패 시에는 안전하게 False 반환
+
     # [수정] 가짜 매장 생성 방지 및 search_keyword 필드 추가
     system_instruction = (
-        "당신은 한국의 지역 맛집 전문가입니다. "
-        "사용자가 입력한 지역과 조건에 맞는 '실제로 존재하는' 맛집 10곳을 추천하세요. 폐업했거나 가상의 식당을 지어내면 안 됩니다. "
-        "반드시 아래 JSON 배열 형식으로만 응답하세요: "
+        "당신은 한국의 실제 존재하는 맛집 정보만 제공하는 검증기입니다. "
+        "사용자가 입력한 지역과 조건에 맞는 '실제로 존재하는' 맛집 6곳을 추천하세요. 폐업했거나 가상의 식당을 지어내면 안 됩니다. "
+        "1. 반드시 '네이버 지도'나 '카카오맵'에 등록된 매장만 추천하세요. "
+        "2. 만약 해당 지역에 검색어에 맞는 유명한 맛집을 확신할 수 없다면, 가상의 이름을 지어내지 말고 '맛집 정보 없음'이라고 응답하세요. "
+        "3. 결과는 오직 아래 JSON 배열로만 출력하세요."
         '[{"name": "식당명", "search_keyword": "동네이름 식당명 (예: 강남역 쉑쉑버거)", "desc": "메뉴 및 특징", "address": "실제 주소 또는 상세 위치", "category": "음식 분류"}]'
+
     )
     
     prompt_text = f'사용자 요청: "{user_input}"\n\n위 조건에 맞는 실존하는 맛집을 추천해주세요.'
@@ -80,6 +99,7 @@ def get_ai_recommendations(user_input):
         place['link'] = f"https://m.search.naver.com/search.naver?query={urllib.parse.quote(search_query)}"
         
     return places
+
 
 # ── 3. Vercel 핸들러 ──
 class handler(BaseHTTPRequestHandler):
