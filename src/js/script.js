@@ -227,13 +227,6 @@ const showPage = (page) => {
 	}
 };
 
-// 7. 이벤트 리스너 (기존 유지)
-searchBtn.addEventListener("click", () => {
-	hideEmptyMessage();
-	const query = searchInput.value.trim();
-	if (query) fetchRecommendations(query);
-});
-
 document.getElementById("menuHome").onclick = () => showPage("home");
 document.getElementById("menuFav").onclick = () => showPage("fav");
 document.getElementById("goHome").onclick = () => showPage("home");

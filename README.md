@@ -75,8 +75,13 @@ DISCORD_WEBHOOK_URL="디스코드_웹훅_주소"
 
 ⚠️ **보안 주의사항**: API 키가 GitHub 등에 노출될 경우 무단 사용으로 인한 요금 폭탄을 맞을 수 있습니다. 어떠한 경우에도 소스 코드 내부나 커밋 이력에 위 API 키를 직접 하드코딩하지 말고 `.env` 파일과 환경변수 시스템을 통해 안전하게 관리하세요.
 
+## 배포/실행 방법
 
+```
+  Git hub 에 push 되면 vercel 에 hooking 으로 deployment 처리 됨
+  deployment 이후 생성되는 url 로 서비스 접근 가능
+```
 
-Vercel 환경 실행
+Vercel 환경 실행 url
 
 [https://codyssey-a1-3-h7m29cs3u-smong2.vercel.app](https://codyssey-a1-3-h7m29cs3u-smong2.vercel.app/#)
