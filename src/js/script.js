@@ -1,5 +1,6 @@
 // 1. 상태 관리
 let favorites = JSON.parse(localStorage.getItem("jogiyo_favs")) || [];
+let currentResults = [];
 
 const themeToggle = document.getElementById("themeToggle");
 const currentTheme = localStorage.getItem("jogiyo_theme");
@@ -12,43 +13,43 @@ const searchBtn = document.getElementById("searchBtn");
 
 // 접속 시 기존 테마 적용
 if (currentTheme === "dark") {
-    document.body.classList.add("dark-mode");
-    themeToggle.textContent = "☀️";
+	document.body.classList.add("dark-mode");
+	themeToggle.textContent = "☀️";
 }
 
 themeToggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    let theme = "light";
-    if (document.body.classList.contains("dark-mode")) {
-        theme = "dark";
-        themeToggle.textContent = "☀️";
-    } else {
-        themeToggle.textContent = "🌙";
-    }
-    localStorage.setItem("jogiyo_theme", theme);
+	document.body.classList.toggle("dark-mode");
+	let theme = "light";
+	if (document.body.classList.contains("dark-mode")) {
+		theme = "dark";
+		themeToggle.textContent = "☀️";
+	} else {
+		themeToggle.textContent = "🌙";
+	}
+	localStorage.setItem("jogiyo_theme", theme);
 });
 
 const handleSearch = () => {
-    if (searchBtn.disabled) return;
-    
-    const query = searchInput.value.trim();
-    if (!query) {
-        showToast("⚠️ 검색어를 입력해주세요!");
-        searchInput.focus();
-        return;
-    }
-    hideEmptyMessage();
-    fetchRecommendations(query);
+	if (searchBtn.disabled) return;
+
+	const query = searchInput.value.trim();
+	if (!query) {
+		showToast("⚠️ 검색어를 입력해주세요!");
+		searchInput.focus();
+		return;
+	}
+	hideEmptyMessage();
+	fetchRecommendations(query);
 };
 
 searchBtn.addEventListener("click", handleSearch);
 
 // [script.js] 7. 이벤트 리스너 하단에 추가
 searchInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault(); // 기본 폼 제출 동작 방지
-        handleSearch();
-    }
+	if (event.key === "Enter") {
+		event.preventDefault(); // 기본 폼 제출 동작 방지
+		handleSearch();
+	}
 });
 
 // 3. API 호출 함수
@@ -60,40 +61,37 @@ const fetchRecommendations = async (query) => {
         </div>
     `;
 
-    // 15초 타임아웃 설정
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); 
+	// 15초 타임아웃 설정
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 15000);
 
 	try {
 		const response = await fetch("/api/ai", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ query }),
-            signal: controller.signal // 타임아웃 시그널 연결
+			signal: controller.signal, // 타임아웃 시그널 연결
 		});
-        
-        clearTimeout(timeoutId); // 성공 시 타이머 해제
 
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-        }
+		clearTimeout(timeoutId); // 성공 시 타이머 해제
+
+		if (!response.ok) {
+			throw new Error(`HTTP Error: ${response.status}`);
+		}
 
 		const data = await response.json();
 		renderCards(data, restaurantList);
-
 	} catch (error) {
 		console.error("Error:", error);
-        
-        // 에러 종류에 따른 UX 메시지 분기 처리
-        if (error.name === 'AbortError') {
-            restaurantList.innerHTML = '<div class="empty-msg empty-message">요청 시간이 초과되었습니다. 다시 시도해주세요 ⏳</div>';
-        } else {
-            restaurantList.innerHTML = '<div class="empty-msg empty-message">서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요 🚨</div>';
-        }
+
+		// 에러 종류에 따른 UX 메시지 분기 처리
+		if (error.name === "AbortError") {
+			restaurantList.innerHTML = '<div class="empty-msg empty-message">요청 시간이 초과되었습니다. 다시 시도해주세요 ⏳</div>';
+		} else {
+			restaurantList.innerHTML = '<div class="empty-msg empty-message">서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요 🚨</div>';
+		}
 	}
 };
-
-
 
 // 4. 카드 렌더링 함수
 const renderCards = (data, targetElement) => {
@@ -105,25 +103,25 @@ const renderCards = (data, targetElement) => {
 	targetElement.innerHTML = data
 		.map((store) => {
 			const isFav = favorites.some((f) => f.id === store.id);
-            const storeJson = JSON.stringify(store).replace(/'/g, "&#39;");
-            
-            const imagesArray = store.images || [];
-            const firstImg = imagesArray.length > 0 ? imagesArray[0] : 'https://via.placeholder.com/300?text=No+Image';
-            
-            // [수정] 기본 대체 이미지인지 판별
-            const isNoImage = firstImg.includes('via.placeholder.com');
-            
-            // 대체 이미지면 뱃지를 보여주지 않음
-            const extraCount = isNoImage ? 0 : imagesArray.length - 1;
-            const badgeHtml = extraCount > 0 ? `<div class="image-count-badge">+${extraCount}</div>` : '';
-            const imagesJson = JSON.stringify(imagesArray).replace(/"/g, '&quot;');
-            
-            const addressText = store.address || store.location || '주소 정보 없음';
-            
-            // [수정] 대체 이미지면 onclick 이벤트를 없애고 클릭 커서를 기본으로 변경
-            const clickEvent = isNoImage ? "" : `onclick="openModal(${imagesJson}, 0)"`;
-            const cursorStyle = isNoImage ? "cursor: default;" : "cursor: pointer;";
-            
+			const storeJson = JSON.stringify(store).replace(/'/g, "&#39;");
+
+			const imagesArray = store.images || [];
+			const firstImg = imagesArray.length > 0 ? imagesArray[0] : "https://via.placeholder.com/300?text=No+Image";
+
+			// [수정] 기본 대체 이미지인지 판별
+			const isNoImage = firstImg.includes("via.placeholder.com");
+
+			// 대체 이미지면 뱃지를 보여주지 않음
+			const extraCount = isNoImage ? 0 : imagesArray.length - 1;
+			const badgeHtml = extraCount > 0 ? `<div class="image-count-badge">+${extraCount}</div>` : "";
+			const imagesJson = JSON.stringify(imagesArray).replace(/"/g, "&quot;");
+
+			const addressText = store.address || store.location || "주소 정보 없음";
+
+			// [수정] 대체 이미지면 onclick 이벤트를 없애고 클릭 커서를 기본으로 변경
+			const clickEvent = isNoImage ? "" : `onclick="openModal(${imagesJson}, 0)"`;
+			const cursorStyle = isNoImage ? "cursor: default;" : "cursor: pointer;";
+
 			return `
             <div class="card">
                 <button class="fav-btn ${isFav ? "active" : ""}" onclick='toggleFavorite(${storeJson}, this)'>
@@ -138,7 +136,7 @@ const renderCards = (data, targetElement) => {
                 <div class="card-info">
                     <div class="card-header">
                         <h4>${store.name}</h4>
-                        <span class="category-badge">${store.category || '맛집'}</span>
+                        <span class="category-badge">${store.category || "맛집"}</span>
                     </div>
                     <p class="desc">${store.desc}</p>
                     <div class="card-footer">
@@ -149,6 +147,7 @@ const renderCards = (data, targetElement) => {
                             </button>
                         </div>
                         <a href="${store.link}" target="_blank" class="link-btn">네이버 검색 ➔</a>
+                        <button class="share-btn" onclick='shareStore(${storeJson})'>공유하기</button>
                     </div>
                 </div>
             </div>
@@ -158,57 +157,60 @@ const renderCards = (data, targetElement) => {
 };
 
 window.copyAddress = (address) => {
-    navigator.clipboard.writeText(address).then(() => {
-        showToast("📍 주소가 복사되었습니다.");
-    }).catch(err => {
-        console.error("복사 실패:", err);
-        showToast("❌ 주소 복사에 실패했습니다.");
-    });
+	navigator.clipboard
+		.writeText(address)
+		.then(() => {
+			showToast("📍 주소가 복사되었습니다.");
+		})
+		.catch((err) => {
+			console.error("복사 실패:", err);
+			showToast("❌ 주소 복사에 실패했습니다.");
+		});
 };
 
 // 5. 즐겨찾기 토글 로직 [디자인 3, 4]
 window.toggleFavorite = (store, btnElement) => {
 	const index = favorites.findIndex((f) => f.id === store.id);
-    const isAdding = index === -1;
+	const isAdding = index === -1;
 
 	if (!isAdding) {
 		favorites.splice(index, 1); // 해제
-        btnElement.classList.remove("active"); // 클래스 즉시 제거
+		btnElement.classList.remove("active"); // 클래스 즉시 제거
 	} else {
 		favorites.push(store); // 등록
-        btnElement.classList.add("active"); // 클래스 즉시 추가
+		btnElement.classList.add("active"); // 클래스 즉시 추가
 	}
 	localStorage.setItem("jogiyo_favs", JSON.stringify(favorites));
 
 	if (document.getElementById("favPage").style.display === "block") {
 		renderCards(favorites, favList);
 	}
-	
-    // alert 대신 토스트 팝업 호출
-    showToast(isAdding ? "❤️ 즐겨찾기에 추가되었습니다!" : "🤍 즐겨찾기에서 삭제되었습니다.");
+
+	// alert 대신 토스트 팝업 호출
+	showToast(isAdding ? "❤️ 즐겨찾기에 추가되었습니다!" : "🤍 즐겨찾기에서 삭제되었습니다.");
 };
 
 // [디자인 4] 토스트 팝업 함수 추가
 const showToast = (msg) => {
-    let container = document.getElementById("toastContainer");
-    if (!container) {
-        container = document.createElement("div");
-        container.id = "toastContainer";
-        container.className = "toast-container";
-        document.body.appendChild(container);
-    }
-    
-    const toast = document.createElement("div");
-    toast.className = "toast";
-    toast.textContent = msg;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => toast.classList.add("show"), 10);
-    setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 300);
-    }, 2500);
+	let container = document.getElementById("toastContainer");
+	if (!container) {
+		container = document.createElement("div");
+		container.id = "toastContainer";
+		container.className = "toast-container";
+		document.body.appendChild(container);
+	}
+
+	const toast = document.createElement("div");
+	toast.className = "toast";
+	toast.textContent = msg;
+
+	container.appendChild(toast);
+
+	setTimeout(() => toast.classList.add("show"), 10);
+	setTimeout(() => {
+		toast.classList.remove("show");
+		setTimeout(() => toast.remove(), 300);
+	}, 2500);
 };
 
 // 6. 페이지 네비게이션
@@ -238,42 +240,80 @@ const imageModal = document.getElementById("imageModal");
 const fullImage = document.getElementById("fullImage");
 
 window.openModal = (images, index = 0) => {
-    currentModalImages = images;
-    currentModalIndex = index;
-    updateModalImage();
-    imageModal.style.display = "flex";
+	currentModalImages = images;
+	currentModalIndex = index;
+	updateModalImage();
+	imageModal.style.display = "flex";
 };
 
 window.updateModalImage = () => {
-    fullImage.src = currentModalImages[currentModalIndex];
-    
-    // 이미지가 1장이면 화살표 숨기기
-    const showNav = currentModalImages.length > 1 ? "block" : "none";
-    document.getElementById("prevBtn").style.display = showNav;
-    document.getElementById("nextBtn").style.display = showNav;
-    
-    // 카운터 업데이트 (예: 1 / 5)
-    document.getElementById("modalCounter").style.display = showNav;
-    document.getElementById("modalCounter").innerText = `${currentModalIndex + 1} / ${currentModalImages.length}`;
+	fullImage.src = currentModalImages[currentModalIndex];
+
+	// 이미지가 1장이면 화살표 숨기기
+	const showNav = currentModalImages.length > 1 ? "block" : "none";
+	document.getElementById("prevBtn").style.display = showNav;
+	document.getElementById("nextBtn").style.display = showNav;
+
+	// 카운터 업데이트 (예: 1 / 5)
+	document.getElementById("modalCounter").style.display = showNav;
+	document.getElementById("modalCounter").innerText = `${currentModalIndex + 1} / ${currentModalImages.length}`;
 };
 
 window.changeModalImage = (step) => {
-    currentModalIndex += step;
-    // 배열 끝에 도달하면 처음/마지막으로 루프
-    if (currentModalIndex < 0) currentModalIndex = currentModalImages.length - 1;
-    if (currentModalIndex >= currentModalImages.length) currentModalIndex = 0;
-    updateModalImage();
+	currentModalIndex += step;
+	// 배열 끝에 도달하면 처음/마지막으로 루프
+	if (currentModalIndex < 0) currentModalIndex = currentModalImages.length - 1;
+	if (currentModalIndex >= currentModalImages.length) currentModalIndex = 0;
+	updateModalImage();
 };
 
 window.closeModal = () => {
-    imageModal.style.display = "none";
+	imageModal.style.display = "none";
 };
 
 // 모달 바깥 배경 클릭 시 닫기
-imageModal.addEventListener('click', (e) => {
-    if (e.target === imageModal) closeModal();
+imageModal.addEventListener("click", (e) => {
+	if (e.target === imageModal) closeModal();
 });
 
+const renderFilters = (data) => {
+	const categories = ["전체", ...new Set(data.map((item) => item.category))];
+	const filterBar = document.getElementById("filterBar");
+	filterBar.innerHTML = categories.map((cat) => `<button onclick="filterResults('${cat}')">${cat}</button>`).join("");
+};
+
+window.filterResults = (category) => {
+	const filtered = category === "전체" ? currentResults : currentResults.filter((i) => i.category === category);
+	renderCards(filtered, restaurantList);
+};
+
+window.shareStore = (store) => {
+	if (navigator.share) {
+		navigator
+			.share({
+				title: "저기요.ai 추천 맛집",
+				text: `${store.name} 어때? ${store.desc}`,
+				url: store.link,
+			})
+			.catch(console.error);
+	} else {
+		// 공유 기능이 없는 브라우저용 (복사 로직으로 대체)
+		copyAddress(store.link);
+		showToast("링크가 복사되었습니다!");
+	}
+};
+
+window.openMap = (address, name) => {
+	const mapFrame = document.getElementById("mapFrame");
+	// 네이버 지도 검색 URL 패턴
+	const mapUrl = `https://map.naver.com/v5/search/${encodeURIComponent(address)} ${encodeURIComponent(name)}`;
+	mapFrame.src = mapUrl;
+	document.getElementById("mapModal").style.display = "flex";
+};
+
+window.closeMapModal = () => {
+	document.getElementById("mapModal").style.display = "none";
+};
 
 // ─────────────────────────────────────
 // 빈 화면 랜덤 카피 문구 (기존 유지)

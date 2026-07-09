@@ -11,10 +11,10 @@
 			<div class="container">
 				<h1 class="logo" id="goHome">저기요<span>.ai</span></h1>
 
-				<div class="header-right" style="display: flex; align-items: center; gap: 15px;">
+				<div class="header-right" style="display: flex; align-items: center; gap: 15px">
 					<button id="themeToggle" class="theme-btn" title="다크모드 변경">🌙</button>
 					<nav>
-						<ul style="margin: 0; padding: 0; display: flex; gap: 15px;">
+						<ul style="margin: 0; padding: 0; display: flex; gap: 15px">
 							<li><a href="#" id="menuHome" class="active">홈</a></li>
 							<li><a href="#" id="menuFav">즐겨찾기</a></li>
 						</ul>
@@ -34,6 +34,7 @@
 					</div>
 				</section>
 				<section class="content-section">
+					<div id="filterBar" class="filter-bar"></div>
 					<h3>✨ AI 추천 결과</h3>
 					<div id="restaurantList" class="restaurant-grid"></div>
 					<div id="emptyMessage" class="empty-message">
@@ -65,6 +66,9 @@
 
 		<script src="js/script.js"></script>
 
-
+		<div id="mapModal" class="modal">
+			<span class="close-modal" onclick="closeMapModal()">&times;</span>
+			<iframe id="mapFrame" src="" width="90%" height="80%"></iframe>
+		</div>
 	</body>
 </html>
