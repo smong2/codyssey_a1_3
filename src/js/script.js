@@ -128,6 +128,8 @@ const renderCards = (data, targetElement) => {
                 <button class="fav-btn ${isFav ? "active" : ""}" onclick='toggleFavorite(${storeJson}, this)'>
                     <svg viewBox="0 0 24 24" class="heart-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 </button>
+
+                <button class="map-btn" onclick="openMap('${addressText}', '${store.name}')">🗺️</button>
                 
                 <div class="image-container" ${clickEvent} style="${cursorStyle}">
                     <img src="${firstImg}" class="card-img" alt="가게 이미지">
@@ -143,7 +145,7 @@ const renderCards = (data, targetElement) => {
 
                     <div class="card-footer">
                         <div class="address-wrapper">
-                            <p class="address" onclick="openMap('${addressText}', '${store.name}')" style="cursor:pointer; text-decoration:underline;">
+                            <p class="address" style="cursor:pointer; text-decoration:underline;">
                                 📍 ${addressText}
                             </p>
                             <button class="copy-btn" onclick="copyAddress('${addressText}')">
@@ -288,7 +290,22 @@ const renderFilters = (data) => {
 };
 
 window.filterResults = (category) => {
-	const filtered = category === "전체" ? currentResults : currentResults.filter((i) => i.category === category);
+	// 1. 디버깅용: 어떤 카테고리가 들어오는지 확인
+	console.log("선택된 카테고리:", category);
+
+	// 2. 전체 선택 시 currentResults 전체 표시
+	if (category === "전체") {
+		renderCards(currentResults, restaurantList);
+		return;
+	}
+
+	// 3. 필터링 (공백 제거 후 비교)
+	const filtered = currentResults.filter((i) => {
+		const itemCat = (i.category || "맛집").trim();
+		return itemCat === category.trim();
+	});
+
+	console.log("필터링 결과 개수:", filtered.length);
 	renderCards(filtered, restaurantList);
 };
 
@@ -319,7 +336,9 @@ window.openMap = (address, name) => {
 window.closeMapModal = () => {
 	document.getElementById("mapModal").style.display = "none";
 };
-
+window.addEventListener("click", (e) => {
+	if (e.target.id === "mapModal") closeMapModal();
+});
 // ─────────────────────────────────────
 // 빈 화면 랜덤 카피 문구 (기존 유지)
 // ─────────────────────────────────────
