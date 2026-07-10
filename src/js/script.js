@@ -34,7 +34,9 @@ showEmptyMessage(); // 접속 시 최초 실행
 
 // ── 4. 메인 검색 및 API 로직 ──
 const handleSearch = () => {
+	// 1. 이미 검색이 진행 중(잠금 상태)이면 호출을 무시합니다. (중복 호출 100% 방지)
 	if (searchBtn.disabled) return;
+
 	const query = searchInput.value.trim();
 	if (!query) {
 		showToast("⚠️ 검색어를 입력해주세요!");
@@ -42,7 +44,18 @@ const handleSearch = () => {
 		return;
 	}
 	hideEmptyMessage();
-	fetchRecommendations(query);
+
+	// 2. 검색 시작: 버튼을 비활성화하고 반투명하게 만듭니다.
+	searchBtn.disabled = true;
+	searchBtn.style.opacity = "0.5";
+	searchBtn.style.cursor = "not-allowed";
+
+	// 3. API 호출이 끝난 후(성공하든 실패하든) 반드시 버튼을 다시 풀어줍니다.
+	fetchRecommendations(query).finally(() => {
+		searchBtn.disabled = false;
+		searchBtn.style.opacity = "1";
+		searchBtn.style.cursor = "pointer";
+	});
 };
 
 const fetchRecommendations = async (query) => {
