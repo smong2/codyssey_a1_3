@@ -83,7 +83,7 @@ const fetchRecommendations = async (query) => {
 
 		const data = await response.json();
 
-		// [핵심 수정] 받아온 데이터를 전역 변수에 반드시 저장해야 필터링이 동작합니다!
+		// 받아온 데이터를 전역 변수에 저장 (필터링 동작을 위함)
 		currentResults = data;
 
 		renderCards(currentResults, restaurantList);
@@ -109,17 +109,21 @@ const renderCards = (data, targetElement) => {
 		.map((store) => {
 			const isFav = favorites.some((f) => f.id === store.id);
 			const storeJson = JSON.stringify(store).replace(/'/g, "&#39;");
+
 			const imagesArray = store.images || [];
-			const firstImg = imagesArray.length > 0 ? imagesArray[0] : "https://via.placeholder.com/300?text=No+Image";
-			const isNoImage = firstImg.includes("via.placeholder.com");
+			const isNoImage = imagesArray.length === 0; // 이미지가 없으면 true
 
 			const extraCount = isNoImage ? 0 : imagesArray.length - 1;
 			const badgeHtml = extraCount > 0 ? `<div class="image-count-badge">+${extraCount}</div>` : "";
 			const imagesJson = JSON.stringify(imagesArray).replace(/"/g, "&quot;");
 			const addressText = store.address || store.location || "주소 정보 없음";
 
+			// 이미지가 없으면 모달 클릭을 막고, 기본 커서로 변경
 			const clickEvent = isNoImage ? "" : `onclick='openModal(${imagesJson}, 0)'`;
 			const cursorStyle = isNoImage ? "cursor: default;" : "cursor: pointer;";
+
+			// 이미지가 없을 경우 회색 배경에 "이미지 없음" 텍스트를 출력
+			const imageHtml = isNoImage ? `<div style="width:100%; height:220px; display:flex; align-items:center; justify-content:center; background:#eee; color:#999; font-size:14px; font-weight:bold;">이미지 없음</div>` : `<img src="${imagesArray[0]}" class="card-img" alt="가게 이미지">${badgeHtml}`;
 
 			return `
         <div class="card">
@@ -129,8 +133,7 @@ const renderCards = (data, targetElement) => {
             <button class="map-btn" onclick="openMap('${addressText}', '${store.name}')">🗺️</button>
             
             <div class="image-container" ${clickEvent} style="${cursorStyle}">
-                <img src="${firstImg}" class="card-img" alt="가게 이미지">
-                ${badgeHtml}
+                ${imageHtml}
             </div>
             
             <div class="card-info">
