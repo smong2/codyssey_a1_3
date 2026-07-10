@@ -37,7 +37,7 @@ body {
 
 /* ── 2. 헤더 및 네비게이션 (Header & GNB) ── */
 .gnb {
-	background: var(--card-bg); /* 다크모드 대응을 위해 변수 사용 */
+	background: var(--card-bg);
 	border-bottom: 1px solid var(--border-color);
 	padding: 15px 0;
 	position: sticky;
@@ -50,36 +50,30 @@ body {
 	justify-content: space-between;
 	align-items: center;
 }
-
 .logo {
 	font-size: 24px;
 	color: var(--primary-color);
+	cursor: pointer;
 }
-
 .logo span {
 	color: var(--text-color);
 	font-weight: normal;
 }
-
 .gnb nav ul {
 	display: flex;
 	list-style: none;
 }
-
 .gnb nav ul li {
 	margin-left: 20px;
 }
-
 .gnb nav ul li a {
 	text-decoration: none;
 	color: #666;
 	font-weight: 600;
 }
-
 .gnb nav ul li a.active {
 	color: var(--primary-color);
 }
-
 .theme-btn {
 	background: none;
 	border: none;
@@ -88,7 +82,6 @@ body {
 	padding: 0;
 	transition: transform 0.2s;
 }
-
 .theme-btn:hover {
 	transform: scale(1.1);
 }
@@ -98,14 +91,12 @@ body {
 	padding: 40px 0;
 	text-align: center;
 }
-
 .search-box {
 	margin-top: 20px;
 	display: flex;
 	gap: 10px;
 	justify-content: center;
 }
-
 .search-box input {
 	width: 100%;
 	max-width: 500px;
@@ -115,7 +106,6 @@ body {
 	background: var(--card-bg);
 	color: var(--text-color);
 }
-
 .search-box button {
 	padding: 12px 24px;
 	background: var(--primary-color);
@@ -125,26 +115,59 @@ body {
 	cursor: pointer;
 }
 
-/* ── 4. 맛집 그리드 레이아웃 (Grid) ── */
+/* ── 4. 컨텐츠 및 맛집 그리드 ── */
+.content-section {
+	margin-bottom: 50px;
+}
+
+/* [수정] AI 추천 결과 제목과 리스트가 겹치지 않도록 여백 추가 */
+.content-section h3 {
+	margin-top: 10px;
+	margin-bottom: 25px;
+	font-size: 1.3rem;
+	color: var(--text-color);
+}
+
 .restaurant-grid {
 	display: grid;
 	gap: 20px;
-	grid-template-columns: 1fr; /* 모바일: 1열 */
+	grid-template-columns: 1fr;
 }
-
 @media (min-width: 768px) {
 	.restaurant-grid {
 		grid-template-columns: repeat(2, 1fr);
-	} /* 태블릿: 2열 */
+	}
 }
-
 @media (min-width: 1024px) {
 	.restaurant-grid {
 		grid-template-columns: repeat(3, 1fr);
-	} /* PC: 3열 */
+	}
 }
 
-/* ── 5. 맛집 카드 기본 UI (Card) ── */
+/* 필터 바 스타일 */
+.filter-bar {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 20px;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+.filter-bar button {
+	padding: 8px 16px;
+	border-radius: 20px;
+	border: 1px solid var(--border-color);
+	background: var(--card-bg);
+	color: var(--text-color);
+	cursor: pointer;
+	font-weight: 500;
+}
+.filter-bar button:hover {
+	background: var(--primary-color);
+	color: white;
+	border-color: var(--primary-color);
+}
+
+/* ── 5. 맛집 카드 UI (Card) ── */
 .card {
 	background: var(--card-bg);
 	border-color: var(--border-color);
@@ -157,19 +180,17 @@ body {
 		transform 0.2s ease,
 		box-shadow 0.2s ease;
 }
-
 .card:hover {
 	transform: translateY(-6px);
 	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
-/* ── 6. 카드 이미지 영역 (Image & Badge) ── */
+/* ── 6. 카드 이미지 영역 ── */
 .image-container {
 	position: relative;
 	cursor: pointer;
 	overflow: hidden;
 }
-
 .card-img {
 	width: 100%;
 	height: 220px;
@@ -177,11 +198,9 @@ body {
 	display: block;
 	transition: transform 0.3s;
 }
-
 .image-container:hover .card-img {
 	transform: scale(1.05);
 }
-
 .image-count-badge {
 	position: absolute;
 	right: 12px;
@@ -196,38 +215,13 @@ body {
 	backdrop-filter: blur(4px);
 }
 
-/* 가로 스크롤 슬라이더 (사용 안 할 경우 삭제 가능) */
-.slider-container {
-	display: flex;
-	overflow-x: auto;
-	scroll-snap-type: x mandatory;
-	gap: 4px;
-	scrollbar-width: none;
-	-ms-overflow-style: none;
-}
-.slider-container::-webkit-scrollbar {
-	display: none;
-}
-.slider-container.multiple-images .slider-img {
-	flex: 0 0 85%;
-	height: 220px;
-	object-fit: cover;
-	scroll-snap-align: center;
-	cursor: pointer;
-	transition: opacity 0.2s;
-}
-.slider-container.multiple-images .slider-img:hover {
-	opacity: 0.9;
-}
-
-/* ── 7. 카드 텍스트 정보 영역 (Card Info) ── */
+/* ── 7. 카드 텍스트 정보 ── */
 .card-info {
 	padding: 18px;
 	display: flex;
 	flex-direction: column;
 	height: 100%;
 }
-
 .card-header {
 	display: flex;
 	justify-content: space-between;
@@ -235,7 +229,6 @@ body {
 	margin-bottom: 12px;
 	gap: 8px;
 }
-
 .card-header h4 {
 	margin: 0;
 	font-size: 1.15rem;
@@ -244,7 +237,6 @@ body {
 	color: var(--text-color);
 	word-break: keep-all;
 }
-
 .category-badge {
 	font-size: 0.75rem;
 	background: #f3f4f6;
@@ -254,7 +246,6 @@ body {
 	white-space: nowrap;
 	font-weight: 600;
 }
-
 .desc {
 	font-size: 0.95rem;
 	color: var(--text-color);
@@ -264,49 +255,34 @@ body {
 	word-break: keep-all;
 }
 
-/* ── 8. 카드 하단 (주소 및 링크 버튼) ── */
+/* ── 8. 카드 하단 버튼 영역 ── */
 .card-footer {
 	border-top: 1px solid var(--border-color);
 	padding-top: 14px;
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 12px;
 }
-
 .address-wrapper {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
 }
-
 .address {
 	font-size: 0.85rem;
 	color: #777;
 	margin: 0;
 	line-height: 1.4;
 	flex-grow: 1;
+	text-align-last: center;
 }
-
-.copy-btn {
-	background: none;
-	border: none;
-	cursor: pointer;
-	color: #a0a0a0;
-	padding: 6px;
+.action-buttons {
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 6px;
-	transition: all 0.2s;
+	gap: 8px;
 }
-
-.copy-btn:hover {
-	color: var(--text-color);
-	background: var(--border-color);
-}
-
 .link-btn {
+	flex: 2;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -318,18 +294,29 @@ body {
 	padding: 10px 0;
 	border-radius: 8px;
 	transition: background-color 0.2s;
-	flex: 2;
 }
-
 .link-btn:hover {
 	background-color: #02b350;
 }
+.share-btn {
+	flex: 1;
+	background: #f3f4f6;
+	border: none;
+	border-radius: 8px;
+	color: #4b5563;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+.share-btn:hover {
+	background: #e5e7eb;
+}
 
-/* ── 9. 즐겨찾기 하트 버튼 ── */
-.fav-btn {
+/* ── 9. 즐겨찾기 및 지도 버튼 (Absolute) ── */
+.fav-btn,
+.map-btn {
 	position: absolute;
 	top: 12px;
-	right: 12px;
 	z-index: 10;
 	background: rgba(255, 255, 255, 0.9);
 	border: none;
@@ -341,16 +328,23 @@ body {
 	justify-content: center;
 	cursor: pointer;
 	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-	transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	transition: all 0.2s;
 }
-
-.fav-btn:hover {
+.fav-btn {
+	right: 12px;
+}
+.map-btn {
+	left: 12px;
+	font-size: 1.2rem;
+}
+.fav-btn:hover,
+.map-btn:hover {
 	transform: scale(1.15);
 }
-.fav-btn:active {
+.fav-btn:active,
+.map-btn:active {
 	transform: scale(0.9);
 }
-
 .heart-icon {
 	width: 22px;
 	height: 22px;
@@ -359,13 +353,12 @@ body {
 	stroke-width: 1.5;
 	transition: all 0.3s;
 }
-
 .fav-btn.active .heart-icon {
 	fill: #ff4757;
 	stroke: #ff4757;
 }
 
-/* ── 10. 전체화면 모달 (Modal & Slider) ── */
+/* ── 10. 모달 전용 스타일 (이미지 & 지도 공통) ── */
 .modal {
 	display: none;
 	position: fixed;
@@ -378,13 +371,18 @@ body {
 	justify-content: center;
 	align-items: center;
 }
-
 .modal-content {
 	max-width: 90%;
 	max-height: 80%;
 	border-radius: 8px;
 }
-
+#mapModal iframe {
+	width: 90%;
+	height: 80%;
+	border-radius: 8px;
+	border: none;
+	background: #fff;
+}
 .close-modal {
 	position: absolute;
 	top: 30px;
@@ -393,7 +391,6 @@ body {
 	font-size: 40px;
 	cursor: pointer;
 }
-
 .modal-nav {
 	position: absolute;
 	top: 50%;
@@ -408,7 +405,6 @@ body {
 	transition: background 0.2s;
 	z-index: 1001;
 }
-
 .modal-nav:hover {
 	background: rgba(0, 0, 0, 0.8);
 }
@@ -418,7 +414,6 @@ body {
 .modal-nav.next {
 	right: 20px;
 }
-
 .modal-counter {
 	position: absolute;
 	bottom: 30px;
@@ -432,7 +427,7 @@ body {
 	letter-spacing: 1px;
 }
 
-/* ── 11. 상태 메시지 및 애니메이션 (Loading & Empty & Toast) ── */
+/* ── 11. 상태 메시지 및 애니메이션 ── */
 .empty-message {
 	display: flex;
 	flex-direction: column;
@@ -442,7 +437,6 @@ body {
 	gap: 16px;
 	color: #888;
 }
-
 .empty-icon {
 	font-size: 48px;
 }
@@ -460,23 +454,27 @@ body {
 	color: #999;
 	font-size: 18px;
 }
-
 .loading-container {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	padding: 60px 0;
-	grid-column: 1 / -1; /* <--- 이 부분이 핵심! 그리드 전체 열을 차지합니다. */
+	grid-column: 1 / -1;
 }
-
+.sub-text {
+	font-size: 0.85rem;
+	color: #888;
+	font-weight: normal;
+	margin-top: 8px;
+	display: block;
+}
 .spinner {
 	font-size: 40px;
 	animation: bounceSpin 2s infinite ease-in-out;
 	display: inline-block;
 	margin-bottom: 15px;
 }
-
 @keyframes bounceSpin {
 	0% {
 		transform: translateY(0) rotate(0deg);
@@ -489,14 +487,7 @@ body {
 	}
 }
 
-.sub-text {
-	font-size: 0.85rem;
-	color: #888;
-	font-weight: normal;
-	margin-top: 8px;
-	display: block;
-}
-
+/* ── 12. 토스트 팝업 ── */
 .toast-container {
 	position: fixed;
 	bottom: 40px;
@@ -508,7 +499,6 @@ body {
 	gap: 10px;
 	pointer-events: none;
 }
-
 .toast {
 	background: rgba(30, 30, 30, 0.9);
 	color: white;
@@ -523,70 +513,7 @@ body {
 	text-align: center;
 	white-space: nowrap;
 }
-
 .toast.show {
 	opacity: 1;
 	transform: translateY(0);
-}
-
-.filter-bar {
-	display: flex;
-	gap: 10px;
-	margin-bottom: 20px;
-	justify-content: center;
-	flex-wrap: wrap;
-}
-.filter-bar button {
-	padding: 8px 16px;
-	border-radius: 20px;
-	border: 1px solid var(--border-color);
-	background: var(--card-bg);
-	color: var(--text-color);
-	cursor: pointer;
-}
-.filter-bar button:hover {
-	background: var(--primary-color);
-	color: white;
-}
-
-.action-buttons {
-	display: flex;
-	gap: 8px;
-}
-.share-btn {
-	flex: 1;
-	background: #f3f4f6;
-	border: none;
-	border-radius: 8px;
-	color: #4b5563;
-	font-weight: 600;
-	cursor: pointer;
-}
-.share-btn:hover {
-	background: #e5e7eb;
-}
-/* 지도 모달 전용 스타일 */
-#mapModal iframe {
-	width: 90%;
-	height: 80%;
-	border-radius: 8px;
-	border: none;
-}
-
-/* 지도보기 버튼 (이미지 영역 왼쪽 상단) */
-.map-btn {
-	position: absolute;
-	top: 12px;
-	left: 12px;
-	z-index: 10;
-	background: rgba(255, 255, 255, 0.9);
-	border: none;
-	border-radius: 50%;
-	width: 40px;
-	height: 40px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }

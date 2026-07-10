@@ -1,37 +1,40 @@
-// 1. 상태 관리
+// ── 1. 상태 관리 및 전역 변수 ──
 let favorites = JSON.parse(localStorage.getItem("jogiyo_favs")) || [];
 let currentResults = [];
+let currentModalImages = [];
+let currentModalIndex = 0;
 
-const themeToggle = document.getElementById("themeToggle");
-const currentTheme = localStorage.getItem("jogiyo_theme");
-
-// 2. DOM 요소
+// ── 2. DOM 요소 ──
 const restaurantList = document.getElementById("restaurantList");
 const favList = document.getElementById("favList");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
+const themeToggle = document.getElementById("themeToggle");
+const imageModal = document.getElementById("imageModal");
+const fullImage = document.getElementById("fullImage");
+const filterBar = document.getElementById("filterBar");
 
-// 접속 시 기존 테마 적용
+// ── 3. 초기 설정 (테마 및 빈 화면) ──
+const currentTheme = localStorage.getItem("jogiyo_theme");
 if (currentTheme === "dark") {
 	document.body.classList.add("dark-mode");
 	themeToggle.textContent = "☀️";
 }
 
-themeToggle.addEventListener("click", () => {
-	document.body.classList.toggle("dark-mode");
-	let theme = "light";
-	if (document.body.classList.contains("dark-mode")) {
-		theme = "dark";
-		themeToggle.textContent = "☀️";
-	} else {
-		themeToggle.textContent = "🌙";
-	}
-	localStorage.setItem("jogiyo_theme", theme);
-});
+const emptyCopies = ["오늘도 '아무거나'는 없습니다 🙅", "AI는 이미 맛집을 알고 있어요. 당신만 모를 뿐 🤫", "오늘 점심, 아직도 고민 중이세요? 🤔", "당신의 위장이 원하는 곳, AI가 찾아드려요 🤖", "검색 한 번으로 후회 없는 한 끼를 🍜", "맛집 고민에 쓰는 시간, 이제 AI한테 넘기세요 ⏱️"];
 
+const showEmptyMessage = () => {
+	const randomIndex = Math.floor(Math.random() * emptyCopies.length);
+	const emptyMessage = document.getElementById("emptyMessage");
+	emptyMessage.querySelector(".empty-copy").textContent = emptyCopies[randomIndex];
+	emptyMessage.style.display = "flex";
+};
+const hideEmptyMessage = () => (document.getElementById("emptyMessage").style.display = "none");
+showEmptyMessage(); // 접속 시 최초 실행
+
+// ── 4. 메인 검색 및 API 로직 ──
 const handleSearch = () => {
 	if (searchBtn.disabled) return;
-
 	const query = searchInput.value.trim();
 	if (!query) {
 		showToast("⚠️ 검색어를 입력해주세요!");
@@ -42,26 +45,15 @@ const handleSearch = () => {
 	fetchRecommendations(query);
 };
 
-searchBtn.addEventListener("click", handleSearch);
-
-// [script.js] 7. 이벤트 리스너 하단에 추가
-searchInput.addEventListener("keydown", (event) => {
-	if (event.key === "Enter") {
-		event.preventDefault(); // 기본 폼 제출 동작 방지
-		handleSearch();
-	}
-});
-
-// 3. API 호출 함수
 const fetchRecommendations = async (query) => {
 	restaurantList.innerHTML = `
         <div class="loading-container empty-message" style="display:flex;">
             <div class="spinner">🍽️</div>
-            <p class="empty-copy">AI가 맛집을 찾고 있어요<br><span class="sub-text">최대 15초 정도 소요될 수 있습니다...</span></p>
+            <p class="empty-copy">AI가 진짜 맛집을 찾고 있어요<br><span class="sub-text">네이버 교차 검증 중... (최대 15초)</span></p>
         </div>
     `;
+	filterBar.innerHTML = ""; // 검색 시작 시 기존 필터 초기화
 
-	// 15초 타임아웃 설정
 	const controller = new AbortController();
 	const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -70,22 +62,21 @@ const fetchRecommendations = async (query) => {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ query }),
-			signal: controller.signal, // 타임아웃 시그널 연결
+			signal: controller.signal,
 		});
+		clearTimeout(timeoutId);
 
-		clearTimeout(timeoutId); // 성공 시 타이머 해제
-
-		if (!response.ok) {
-			throw new Error(`HTTP Error: ${response.status}`);
-		}
+		if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
 		const data = await response.json();
-		renderCards(data, restaurantList);
-		renderFilters(data); // 필터 버튼 렌더링
+
+		// [핵심 수정] 받아온 데이터를 전역 변수에 반드시 저장해야 필터링이 동작합니다!
+		currentResults = data;
+
+		renderCards(currentResults, restaurantList);
+		renderFilters(currentResults);
 	} catch (error) {
 		console.error("Error:", error);
-
-		// 에러 종류에 따른 UX 메시지 분기 처리
 		if (error.name === "AbortError") {
 			restaurantList.innerHTML = '<div class="empty-msg empty-message">요청 시간이 초과되었습니다. 다시 시도해주세요 ⏳</div>';
 		} else {
@@ -94,10 +85,10 @@ const fetchRecommendations = async (query) => {
 	}
 };
 
-// 4. 카드 렌더링 함수
+// ── 5. UI 렌더링 로직 (카드 및 필터) ──
 const renderCards = (data, targetElement) => {
 	if (!data || data.length === 0) {
-		targetElement.innerHTML = '<div class="empty-msg empty-message">데이터가 없습니다.</div>';
+		targetElement.innerHTML = '<div class="empty-msg empty-message">조건에 맞는 맛집 데이터를 찾지 못했습니다.</div>';
 		return;
 	}
 
@@ -105,97 +96,106 @@ const renderCards = (data, targetElement) => {
 		.map((store) => {
 			const isFav = favorites.some((f) => f.id === store.id);
 			const storeJson = JSON.stringify(store).replace(/'/g, "&#39;");
-
 			const imagesArray = store.images || [];
 			const firstImg = imagesArray.length > 0 ? imagesArray[0] : "https://via.placeholder.com/300?text=No+Image";
-
-			// [수정] 기본 대체 이미지인지 판별
 			const isNoImage = firstImg.includes("via.placeholder.com");
 
-			// 대체 이미지면 뱃지를 보여주지 않음
 			const extraCount = isNoImage ? 0 : imagesArray.length - 1;
 			const badgeHtml = extraCount > 0 ? `<div class="image-count-badge">+${extraCount}</div>` : "";
 			const imagesJson = JSON.stringify(imagesArray).replace(/"/g, "&quot;");
-
 			const addressText = store.address || store.location || "주소 정보 없음";
 
-			// [수정] 대체 이미지면 onclick 이벤트를 없애고 클릭 커서를 기본으로 변경
-			const clickEvent = isNoImage ? "" : `onclick="openModal(${imagesJson}, 0)"`;
+			const clickEvent = isNoImage ? "" : `onclick='openModal(${imagesJson}, 0)'`;
 			const cursorStyle = isNoImage ? "cursor: default;" : "cursor: pointer;";
 
 			return `
-            <div class="card">
-                <button class="fav-btn ${isFav ? "active" : ""}" onclick='toggleFavorite(${storeJson}, this)'>
-                    <svg viewBox="0 0 24 24" class="heart-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                </button>
-
-                <button class="map-btn" onclick="openMap('${addressText}', '${store.name}')">🗺️</button>
-                
-                <div class="image-container" ${clickEvent} style="${cursorStyle}">
-                    <img src="${firstImg}" class="card-img" alt="가게 이미지">
-                    ${badgeHtml}
+        <div class="card">
+            <button class="fav-btn ${isFav ? "active" : ""}" onclick='toggleFavorite(${storeJson}, this)'>
+                <svg viewBox="0 0 24 24" class="heart-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </button>
+            <button class="map-btn" onclick="openMap('${addressText}', '${store.name}')">🗺️</button>
+            
+            <div class="image-container" ${clickEvent} style="${cursorStyle}">
+                <img src="${firstImg}" class="card-img" alt="가게 이미지">
+                ${badgeHtml}
+            </div>
+            
+            <div class="card-info">
+                <div class="card-header">
+                    <h4>${store.name}</h4>
+                    <span class="category-badge">${store.category || "맛집"}</span>
                 </div>
-                
-                <div class="card-info">
-                    <div class="card-header">
-                        <h4>${store.name}</h4>
-                        <span class="category-badge">${store.category || "맛집"}</span>
+                <p class="desc">${store.desc}</p>
+                <div class="card-footer">
+                    <div class="address-wrapper">
+                        <p class="address" style="cursor:pointer; text-decoration:underline;text-align-last:center" onclick="copyAddress('${addressText}')">
+                            📍 ${addressText}
+                        </p>
                     </div>
-                    <p class="desc">${store.desc}</p>
-
-                    <div class="card-footer">
-                        <div class="address-wrapper">
-                            <p class="address" style="cursor:pointer; text-decoration:underline;text-align-last:center" onclick="copyAddress('${addressText}')">
-                                📍 ${addressText}
-                            </p>
-                        </div>
-                        <div class="action-buttons">
-                            <a href="${store.link}" target="_blank" class="link-btn">네이버 검색 ➔</a>
-                            <button class="share-btn" onclick='shareStore(${storeJson})'>공유</button>
-                        </div>
+                    <div class="action-buttons">
+                        <a href="${store.link}" target="_blank" class="link-btn">네이버 검색 ➔</a>
+                        <button class="share-btn" onclick='shareStore(${storeJson})'>공유</button>
                     </div>
                 </div>
             </div>
-        `;
+        </div>`;
 		})
 		.join("");
 };
 
-window.copyAddress = (address) => {
-	navigator.clipboard
-		.writeText(address)
-		.then(() => {
-			showToast("📍 주소가 복사되었습니다.");
-		})
-		.catch((err) => {
-			console.error("복사 실패:", err);
-			showToast("❌ 주소 복사에 실패했습니다.");
-		});
+const renderFilters = (data) => {
+	if (!data || data.length === 0) return;
+	const categories = ["전체", ...new Set(data.map((item) => (item.category || "기타").trim()))];
+	filterBar.innerHTML = categories.map((cat) => `<button onclick="filterResults('${cat}')">${cat}</button>`).join("");
 };
 
-// 5. 즐겨찾기 토글 로직 [디자인 3, 4]
+window.filterResults = (category) => {
+	if (category === "전체") {
+		renderCards(currentResults, restaurantList);
+		return;
+	}
+	const filtered = currentResults.filter((item) => {
+		return (item.category || "기타").trim() === category.trim();
+	});
+	renderCards(filtered, restaurantList);
+};
+
+// ── 6. 부가 기능 (즐겨찾기, 복사, 공유, 토스트) ──
 window.toggleFavorite = (store, btnElement) => {
 	const index = favorites.findIndex((f) => f.id === store.id);
 	const isAdding = index === -1;
 
-	if (!isAdding) {
-		favorites.splice(index, 1); // 해제
-		btnElement.classList.remove("active"); // 클래스 즉시 제거
+	if (isAdding) {
+		favorites.push(store);
+		btnElement.classList.add("active");
 	} else {
-		favorites.push(store); // 등록
-		btnElement.classList.add("active"); // 클래스 즉시 추가
+		favorites.splice(index, 1);
+		btnElement.classList.remove("active");
 	}
 	localStorage.setItem("jogiyo_favs", JSON.stringify(favorites));
 
 	if (document.getElementById("favPage").style.display === "block") {
 		renderCards(favorites, favList);
 	}
-
-	// alert 대신 토스트 팝업 호출
 	showToast(isAdding ? "❤️ 즐겨찾기에 추가되었습니다!" : "🤍 즐겨찾기에서 삭제되었습니다.");
 };
 
-// [디자인 4] 토스트 팝업 함수 추가
+window.copyAddress = (address) => {
+	navigator.clipboard
+		.writeText(address)
+		.then(() => showToast("📍 주소가 복사되었습니다."))
+		.catch(() => showToast("❌ 복사 실패"));
+};
+
+window.shareStore = (store) => {
+	if (navigator.share) {
+		navigator.share({ title: "저기요.ai 추천 맛집", text: `${store.name} 어때? ${store.desc}`, url: store.link }).catch(console.error);
+	} else {
+		copyAddress(store.link);
+		showToast("링크가 복사되었습니다!");
+	}
+};
+
 const showToast = (msg) => {
 	let container = document.getElementById("toastContainer");
 	if (!container) {
@@ -204,13 +204,10 @@ const showToast = (msg) => {
 		container.className = "toast-container";
 		document.body.appendChild(container);
 	}
-
 	const toast = document.createElement("div");
 	toast.className = "toast";
 	toast.textContent = msg;
-
 	container.appendChild(toast);
-
 	setTimeout(() => toast.classList.add("show"), 10);
 	setTimeout(() => {
 		toast.classList.remove("show");
@@ -218,32 +215,7 @@ const showToast = (msg) => {
 	}, 2500);
 };
 
-// 6. 페이지 네비게이션
-const showPage = (page) => {
-	if (page === "home") {
-		document.getElementById("homePage").style.display = "block";
-		document.getElementById("favPage").style.display = "none";
-		document.getElementById("menuHome").classList.add("active");
-		document.getElementById("menuFav").classList.remove("active");
-	} else {
-		document.getElementById("homePage").style.display = "none";
-		document.getElementById("favPage").style.display = "block";
-		document.getElementById("menuHome").classList.remove("active");
-		document.getElementById("menuFav").classList.add("active");
-		renderCards(favorites, favList); // 즐겨찾기 목록 렌더링
-	}
-};
-
-document.getElementById("menuHome").onclick = () => showPage("home");
-document.getElementById("menuFav").onclick = () => showPage("fav");
-document.getElementById("goHome").onclick = () => showPage("home");
-
-// ── [수정 1] 모달 슬라이드 기능 로직 ──
-let currentModalImages = [];
-let currentModalIndex = 0;
-const imageModal = document.getElementById("imageModal");
-const fullImage = document.getElementById("fullImage");
-
+// ── 7. 모달 로직 (이미지 및 지도) ──
 window.openModal = (images, index = 0) => {
 	currentModalImages = images;
 	currentModalIndex = index;
@@ -253,115 +225,61 @@ window.openModal = (images, index = 0) => {
 
 window.updateModalImage = () => {
 	fullImage.src = currentModalImages[currentModalIndex];
-
-	// 이미지가 1장이면 화살표 숨기기
 	const showNav = currentModalImages.length > 1 ? "block" : "none";
 	document.getElementById("prevBtn").style.display = showNav;
 	document.getElementById("nextBtn").style.display = showNav;
-
-	// 카운터 업데이트 (예: 1 / 5)
 	document.getElementById("modalCounter").style.display = showNav;
 	document.getElementById("modalCounter").innerText = `${currentModalIndex + 1} / ${currentModalImages.length}`;
 };
 
 window.changeModalImage = (step) => {
 	currentModalIndex += step;
-	// 배열 끝에 도달하면 처음/마지막으로 루프
 	if (currentModalIndex < 0) currentModalIndex = currentModalImages.length - 1;
 	if (currentModalIndex >= currentModalImages.length) currentModalIndex = 0;
 	updateModalImage();
 };
 
-window.closeModal = () => {
-	imageModal.style.display = "none";
-};
-
-// 모달 바깥 배경 클릭 시 닫기
-imageModal.addEventListener("click", (e) => {
-	if (e.target === imageModal) closeModal();
-});
-
-const renderFilters = (data) => {
-	const categories = ["전체", ...new Set(data.map((item) => item.category))];
-	const filterBar = document.getElementById("filterBar");
-	filterBar.innerHTML = categories.map((cat) => `<button onclick="filterResults('${cat}')">${cat}</button>`).join("");
-};
-
-window.filterResults = (category) => {
-	// 1. 디버깅용: 필터링 시 데이터 확인
-	console.log("필터링 시작, 타겟 카테고리:", category);
-	console.log("현재 데이터 개수:", currentResults.length);
-
-	// 2. 전체 선택 시
-	if (category === "전체") {
-		renderCards(currentResults, restaurantList);
-		return;
-	}
-
-	// 3. 안전한 필터링 (공백 제거 및 undefined/null 방어)
-	const filtered = currentResults.filter((item) => {
-		const itemCat = (item.category || "기타").trim();
-		const targetCat = category.trim();
-		return itemCat === targetCat;
-	});
-
-	console.log("필터링 결과 개수:", filtered.length);
-
-	// 4. 리스트가 비어있을 때를 대비한 메시지
-	if (filtered.length === 0) {
-		restaurantList.innerHTML = `<div class="empty-msg empty-message">해당 카테고리의 맛집이 없습니다.</div>`;
-	} else {
-		renderCards(filtered, restaurantList);
-	}
-};
-
-window.shareStore = (store) => {
-	if (navigator.share) {
-		navigator
-			.share({
-				title: "저기요.ai 추천 맛집",
-				text: `${store.name} 어때? ${store.desc}`,
-				url: store.link,
-			})
-			.catch(console.error);
-	} else {
-		// 공유 기능이 없는 브라우저용 (복사 로직으로 대체)
-		copyAddress(store.link);
-		showToast("링크가 복사되었습니다!");
-	}
-};
+window.closeModal = () => (imageModal.style.display = "none");
 
 window.openMap = (address, name) => {
-	const mapFrame = document.getElementById("mapFrame");
-	// 네이버 지도 검색 URL 패턴
 	const mapUrl = `https://map.naver.com/v5/search/${encodeURIComponent(address)} ${encodeURIComponent(name)}`;
-	mapFrame.src = mapUrl;
+	document.getElementById("mapFrame").src = mapUrl;
 	document.getElementById("mapModal").style.display = "flex";
 };
 
-window.closeMapModal = () => {
-	document.getElementById("mapModal").style.display = "none";
+window.closeMapModal = () => (document.getElementById("mapModal").style.display = "none");
+
+// ── 8. 이벤트 리스너 등록 ──
+searchBtn.addEventListener("click", handleSearch);
+searchInput.addEventListener("keydown", (e) => {
+	if (e.key === "Enter") {
+		e.preventDefault();
+		handleSearch();
+	}
+});
+
+themeToggle.addEventListener("click", () => {
+	document.body.classList.toggle("dark-mode");
+	const isDark = document.body.classList.contains("dark-mode");
+	themeToggle.textContent = isDark ? "☀️" : "🌙";
+	localStorage.setItem("jogiyo_theme", isDark ? "dark" : "light");
+});
+
+const showPage = (page) => {
+	const isHome = page === "home";
+	document.getElementById("homePage").style.display = isHome ? "block" : "none";
+	document.getElementById("favPage").style.display = isHome ? "none" : "block";
+	document.getElementById("menuHome").classList.toggle("active", isHome);
+	document.getElementById("menuFav").classList.toggle("active", !isHome);
+	if (!isHome) renderCards(favorites, favList);
 };
+
+document.getElementById("menuHome").onclick = () => showPage("home");
+document.getElementById("menuFav").onclick = () => showPage("fav");
+document.getElementById("goHome").onclick = () => showPage("home");
+
+// 모달 바깥 영역 클릭 시 닫기
 window.addEventListener("click", (e) => {
+	if (e.target === imageModal) closeModal();
 	if (e.target.id === "mapModal") closeMapModal();
 });
-// ─────────────────────────────────────
-// 빈 화면 랜덤 카피 문구 (기존 유지)
-// ─────────────────────────────────────
-const emptyCopies = ["오늘도 '아무거나'는 없습니다 🙅", "AI는 이미 맛집을 알고 있어요. 당신만 모를 뿐 🤫", "오늘 점심, 아직도 고민 중이세요? 🤔", "당신의 위장이 원하는 곳, AI가 찾아드려요 🤖", "검색 한 번으로 후회 없는 한 끼를 🍜", "맛집 고민에 쓰는 시간, 이제 AI한테 넘기세요 ⏱️", "오늘 뭐 먹지? 저한테 물어보세요 😎", "전국 맛집 데이터, 지금 당신을 기다리는 중 📍", "배는 고픈데 검색하기 귀찮다면? 저기요! 🙋", "좋은 식사는 좋은 하루를 만듭니다 ☀️", "AI가 추천하면 맛없으면 AI 탓이에요 😇", "오늘의 맛집, 운명처럼 찾아드릴게요 ✨", "혼밥도, 데이트도, 회식도 저기요가 해결해요 🍽️", "지금 이 순간에도 누군가는 맛집을 찾고 있어요 🔍", "맛집 탐험, 지금 시작해볼까요? 🗺️", "위치만 알려주세요, 나머지는 AI가 할게요 📌", "오늘 식사, 후회 없이 골라드릴게요 💯", "검색창에 동네 이름부터 입력해보세요 🏘️", "맛있는 건 참을 수 없잖아요 😋", "저기요, 거기 맛있어요? AI한테 물어봤어요 🤖"];
-
-function showEmptyMessage() {
-	const randomIndex = Math.floor(Math.random() * emptyCopies.length);
-	const emptyMessage = document.getElementById("emptyMessage");
-	const emptyCopy = emptyMessage.querySelector(".empty-copy");
-
-	emptyCopy.textContent = emptyCopies[randomIndex];
-	emptyMessage.style.display = "flex";
-}
-
-function hideEmptyMessage() {
-	document.getElementById("emptyMessage").style.display = "none";
-}
-
-document.querySelector(".close-modal").onclick = () => (imageModal.style.display = "none");
-showEmptyMessage();
