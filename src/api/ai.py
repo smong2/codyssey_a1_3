@@ -11,7 +11,7 @@ from google.genai import types
 def send_webhook_alert(query, results_count):
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
     if not webhook_url: return
-    data = {"content": f"🔍 **[저기요.ai] 새로운 검색 유입!**\n- 검색어: `{query}`\n- 교차 검증 통과 맛집 수: {results_count}곳"}
+    data = {"content": f"🔍 **[저기요.ai] 새로운 검색 유입!**\n- 검색어: `{query}`\n- 검색 맛집 수: {results_count}곳"}
     try:
         requests.post(webhook_url, json=data, timeout=2)
     except Exception:
@@ -91,6 +91,7 @@ def get_ai_recommendations(user_input):
         "1. 반드시 '네이버 지도'나 '카카오맵'에 등록된 매장만 추천하세요. 가상의 식당을 지어내지 마세요."
         "2. search_keyword는 '동네이름 식당명'으로 심플하게 작성하세요."
         "3. 결과는 오직 아래 JSON 배열로만 출력하세요."
+        "4. 매장의 메뉴와 가격을 desc에 간단히 작성하세요. 예: '김치찌개 8,000원, 된장찌개 7,000원'"
         '[{"name": "식당명", "search_keyword": "동네이름 식당명", "desc": "메뉴", "address": "주소", "category": "음식 분류"}]'
     )
     
