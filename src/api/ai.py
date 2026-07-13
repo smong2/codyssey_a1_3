@@ -21,7 +21,7 @@ def get_naver_image(query):
     client_id = os.getenv("NAVER_CLIENT_ID")
     client_secret = os.getenv("NAVER_CLIENT_SECRET")
     url = "https://openapi.naver.com/v1/search/image"
-    params = {"query": query, "display": 10}
+    params = {"query": query, "display": 8}
     headers = {"X-Naver-Client-Id": client_id, "X-Naver-Client-Secret": client_secret}
     
     try:
@@ -79,7 +79,6 @@ def get_ai_recommendations(user_input):
             return place
         return None
 
-    # [수정 1] AI에게 15곳을 뽑으라고 지시하고, 유명한 곳 위주로 제약 강화
     system_instruction = (
         "당신은 한국의 실제 존재하는 맛집 정보만 제공하는 엄격한 검증기입니다. "
         "사용자가 입력한 지역과 조건에 맞는 '실제로 존재하는 유명 맛집'을 15곳 찾아주세요. "
@@ -114,8 +113,8 @@ def get_ai_recommendations(user_input):
         for res in results:
             if res:
                 verified_places.append(res)
-            # 검증을 통과한 진짜 맛집이 8개가 모이면 프론트로 리턴! (풍성한 리스트)
-            if len(verified_places) >= 8:
+            # 검증을 통과한 진짜 맛집이 7개가 모이면 프론트로 리턴! (풍성한 리스트)
+            if len(verified_places) >= 7:
                 break
                 
     return verified_places

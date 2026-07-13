@@ -6,7 +6,8 @@
 >
 > 사용자가 원하는 조건(위치, 분위기, 가성비 등)을 입력하면 AI가 상황에 맞는 **실존 맛집**을 추천해 주는 웹 서비스입니다.
 
-**🔗 배포 URL**: `[https://codyssey-a1-3-guapbrjby-smong2.vercel.app]`
+**🔗 배포 URL**: `[https://codyssey-a1-3-gc3v8uqd6-smong2.vercel.app/]`
+* 주소는 push 때 마다 변경이 되므로 직전 주소를 표시
 
 ## 💡 서비스 개요 및 타겟 사용자
 
@@ -41,7 +42,7 @@
 ### 1. Vercel Serverless 타임아웃(15초) 극복 및 병렬 처리 (Python)
 
 - **문제**: AI가 추천한 식당의 실존 여부와 이미지 링크 유효성을 순차적(Sequential)으로 검증하다 보니, Vercel Serverless Function의 기본 제한 시간인 15초를 초과하여 타임아웃 에러가 빈번하게 발생했습니다.
-- **해결**: Python의 `concurrent.futures.ThreadPoolExecutor`를 도입하여 **멀티 스레딩 기반의 병렬 처리 아키텍처**로 리팩토링했습니다. 15개의 후보 식당을 10개의 스레드가 동시에 검증하도록 하여 처리 시간을 **15초 이상에서 3~4초대로 획기적으로 단축**했습니다.
+- **해결**: Python의 `concurrent.futures.ThreadPoolExecutor`를 도입하여 **멀티 스레딩 기반의 병렬 처리 아키텍처**로 리팩토링했습니다. 15개의 후보 식당을 10개의 스레드가 동시에 검증하도록 하여 처리 시간을 **30초 가까운 검색 결과를 15초 부근으로 획기적으로 단축**했습니다.
 
 ### 2. LLM 환각(Hallucination) 현상 방어를 위한 교차 검증 아키텍처
 
